@@ -5,6 +5,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { distanceToMultiLines, distanceToRect } from "./CanvasUtils";
 
 type Shape =
   | {
@@ -312,56 +313,41 @@ function Paint() {
               const { x, y } = shape.location;
               const { width, height } = shape;
 
-              if (
-                isPointInRect({ x: inPaintX, y: inPaintY }, [
-                  x - offset,
-                  y - offset,
-                  width + 2 * offset,
-                  height + 2 * offset,
-                ]) &&
-                !isPointInRect(
-                  {
-                    x: inPaintX,
-                    y: inPaintY,
-                  },
-                  [
-                    x + offset,
-                    y + offset,
-                    width - 2 * offset,
-                    height - 2 * offset,
-                  ]
-                )
-              ) {
-                const distance = Math.min(
-                  Math.abs(x - inPaintX),
-                  Math.abs(y - inPaintY),
-                  Math.abs(x + width - inPaintX),
-                  Math.abs(y + height - inPaintY)
-                );
-
-                if (distance < closestDistance) {
-                  closestDistance = distance;
-                  closestShapeIndex = index;
+              const distance = distanceToRect(
+                {
+                  x: inPaintX,
+                  y: inPaintY,
+                },
+                {
+                  x,
+                  y,
+                  width,
+                  height,
                 }
+              );
+
+              console.log("rect[", index, "]", distance);
+
+              if (distance < offset && distance < closestDistance) {
+                closestDistance = distance;
+                closestShapeIndex = index;
               }
             } else if (shape.shape === "path") {
               const paths = shape.points;
 
-              let closestPointDistance = Infinity;
+              const distance = distanceToMultiLines(
+                {
+                  x: inPaintX,
+                  y: inPaintY,
+                },
+                paths.map(([x, y]) => ({ x, y }))
+              );
 
-              paths.forEach(([x, y]) => {
-                const distance = Math.sqrt(
-                  Math.pow(inPaintX - x, 2) + Math.pow(inPaintY - y, 2)
-                );
+              console.log("path[", index, "]", distance);
 
-                closestPointDistance = Math.min(closestPointDistance, distance);
-              });
-
-              console.log("path[", index, "]", closestPointDistance);
-
-              if (closestPointDistance < offset) {
-                if (closestPointDistance < closestDistance) {
-                  closestDistance = closestPointDistance;
+              if (distance < offset) {
+                if (distance < closestDistance) {
+                  closestDistance = distance;
                   closestShapeIndex = index;
                 }
               }
