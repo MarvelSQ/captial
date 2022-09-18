@@ -181,7 +181,13 @@ function Paint() {
               (point.clientY - rect.top) * scaleY - (translate?.y || 0);
 
             paint?.lineTo(currentInPaintX, currentInPaintY);
-            paths.push([currentInPaintX, currentInPaintY]);
+            const lastPoint = paths[paths.length - 1];
+            if (
+              lastPoint[0] !== currentInPaintX ||
+              lastPoint[1] !== currentInPaintY
+            ) {
+              paths.push([currentInPaintX, currentInPaintY]);
+            }
             paint?.stroke();
 
             onNewPoint({ x: currentInPaintX, y: currentInPaintY });
