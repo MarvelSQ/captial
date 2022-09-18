@@ -1,0 +1,19 @@
+{
+  "name": "@marvelsq/lc-core",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "browser": "esm/index.js",
+  "typings": "types",
+  "scripts": {
+    "build": "tsup src",
+    "dev": "tsup src --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "tsup": "^6.2.3"
+  }
+}
