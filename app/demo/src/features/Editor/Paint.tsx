@@ -270,20 +270,24 @@ function Paint() {
         }
 
         function removeListener() {
-          renderingObj.current.objs.push({
-            shape: "rect",
-            location: {
-              x: inPaintX,
-              y: inPaintY,
-            },
-            width: lastWidth,
-            height: lastHeight,
-          });
+          if (lastWidth && lastHeight) {
+            console.log("add rect", inPaintX, inPaintY, lastWidth, lastHeight);
 
-          onNewPoint({
-            x: inPaintX + lastWidth,
-            y: inPaintY + lastHeight,
-          });
+            renderingObj.current.objs.push({
+              shape: "rect",
+              location: {
+                x: inPaintX,
+                y: inPaintY,
+              },
+              width: lastWidth,
+              height: lastHeight,
+            });
+
+            onNewPoint({
+              x: inPaintX + lastWidth,
+              y: inPaintY + lastHeight,
+            });
+          }
 
           window.removeEventListener("mousemove", renderRect);
           window.removeEventListener("mouseup", removeListener);
