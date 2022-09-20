@@ -211,8 +211,9 @@ function Paint() {
         let lastX = startX;
         let lastY = startY;
 
-        function listener(event: MouseEvent) {
-          const { clientX, clientY } = event;
+        function listener(event: MouseEvent | TouchEvent) {
+          const { clientX, clientY } =
+            "touches" in event ? event.touches[0] : event;
 
           paint?.translate(
             (clientX - lastX) * scaleX,
@@ -228,11 +229,15 @@ function Paint() {
 
         function removeListener() {
           window.removeEventListener("mousemove", listener);
+          window.removeEventListener("touchmove", listener);
           window.removeEventListener("mouseup", removeListener);
+          window.removeEventListener("touchend", removeListener);
         }
 
         window.addEventListener("mousemove", listener);
+        window.addEventListener("touchmove", listener);
         window.addEventListener("mouseup", removeListener);
+        window.addEventListener("touchend", removeListener);
       } else if (currentToolRef.current === "rect") {
         paint?.moveTo(inPaintX, inPaintY);
 
@@ -244,12 +249,13 @@ function Paint() {
         let lastWidth = 0;
         let lastHeight = 0;
 
-        function renderRect(event: MouseEvent) {
+        function renderRect(event: MouseEvent | TouchEvent) {
+          const point = "touches" in event ? event.touches[0] : event;
           requestAnimationFrame(() => {
             rerenderObj();
 
-            const width = (event.clientX - startX) * scaleX;
-            const height = (event.clientY - startY) * scaleY;
+            const width = (point.clientX - startX) * scaleX;
+            const height = (point.clientY - startY) * scaleY;
 
             lastWidth = width;
             lastHeight = height;
@@ -279,11 +285,15 @@ function Paint() {
           }
 
           window.removeEventListener("mousemove", renderRect);
+          window.removeEventListener("touchmove", renderRect);
           window.removeEventListener("mouseup", removeListener);
+          window.removeEventListener("touchend", removeListener);
         }
 
         window.addEventListener("mousemove", renderRect);
+        window.addEventListener("touchmove", renderRect);
         window.addEventListener("mouseup", removeListener);
+        window.addEventListener("touchend", removeListener);
       } else if (currentToolRef.current === "select") {
         /**
          * 点击位置周围的矩形
