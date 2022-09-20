@@ -7,9 +7,14 @@ import React, {
 } from "react";
 import { distanceToMultiLines, distanceToRect } from "./CanvasUtils";
 
+enum ShapeType {
+  rect = "rect",
+  path = "path",
+}
+
 type Shape =
   | {
-      shape: "rect";
+      shape: ShapeType.rect;
       location: {
         x: number;
         y: number;
@@ -18,26 +23,16 @@ type Shape =
       height: number;
     }
   | {
-      shape: "path";
+      shape: ShapeType.path;
       points: [x: number, y: number][];
     };
-
-function isPointInRect(
-  point: { x: number; y: number },
-  rect: [x: number, y: number, width: number, height: number]
-) {
-  return (
-    point.x >= rect[0] &&
-    point.x <= rect[0] + rect[2] &&
-    point.y >= rect[1] &&
-    point.y <= rect[1] + rect[3]
-  );
-}
 
 function Paint() {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
-  const [tool, setTool] = useState<"pen" | "move" | "rect" | "select">("pen");
+  const [tool, setTool] = useState<ShapeType | "move" | "select">(
+    ShapeType.path
+  );
 
   useLayoutEffect(() => {
     if (canvasRef.current) {
@@ -92,6 +87,10 @@ function Paint() {
       }
 
       const translate = getTranslate();
+
+      const inPaintX =
+        (startPoint.x - rect.left) * scaleX - (translate?.x || 0);
+      const inPaintY = (startPoint.y - rect.top) * scaleY - (translate?.y || 0);
 
       function onNewPoint(point: { x: number; y: number }) {
         const { x, y } = point;
@@ -155,12 +154,7 @@ function Paint() {
         });
       }
 
-      if (currentToolRef.current === "pen") {
-        const inPaintX =
-          (startPoint.x - rect.left) * scaleX - (translate?.x || 0);
-        const inPaintY =
-          (startPoint.y - rect.top) * scaleY - (translate?.y || 0);
-
+      if (currentToolRef.current === ShapeType.path) {
         paint?.moveTo(inPaintX, inPaintY);
 
         const paths = [[inPaintX, inPaintY] as [x: number, y: number]];
@@ -197,7 +191,7 @@ function Paint() {
 
         function removeListener() {
           renderingObj.current.objs.push({
-            shape: "path",
+            shape: ShapeType.path,
             points: paths,
           });
           window.removeEventListener("mousemove", listener);
@@ -240,11 +234,6 @@ function Paint() {
         window.addEventListener("mousemove", listener);
         window.addEventListener("mouseup", removeListener);
       } else if (currentToolRef.current === "rect") {
-        const inPaintX =
-          (startPoint.x - rect.left) * scaleX - (translate?.x || 0);
-        const inPaintY =
-          (startPoint.y - rect.top) * scaleY - (translate?.y || 0);
-
         paint?.moveTo(inPaintX, inPaintY);
 
         const startX = startPoint.x;
@@ -274,7 +263,7 @@ function Paint() {
             console.log("add rect", inPaintX, inPaintY, lastWidth, lastHeight);
 
             renderingObj.current.objs.push({
-              shape: "rect",
+              shape: ShapeType.rect,
               location: {
                 x: inPaintX,
                 y: inPaintY,
@@ -300,11 +289,6 @@ function Paint() {
          * 点击位置周围的矩形
          */
         const offset = 10;
-
-        const inPaintX =
-          (startPoint.x - rect.left) * scaleX - (translate?.x || 0);
-        const inPaintY =
-          (startPoint.y - rect.top) * scaleY - (translate?.y || 0);
 
         function getClosestShapeIndex() {
           const shapes = renderingObj.current.objs;
@@ -391,9 +375,9 @@ function Paint() {
     <>
       <div className="flex gap-2">
         <button
-          className={tool === "pen" ? "bg-blue-400 text-white" : ""}
+          className={tool === ShapeType.path ? "bg-blue-400 text-white" : ""}
           onClick={() => {
-            setTool("pen");
+            setTool(ShapeType.path);
           }}
         >
           pen
@@ -409,7 +393,7 @@ function Paint() {
         <button
           className={tool === "rect" ? "bg-blue-400 text-white" : ""}
           onClick={() => {
-            setTool("rect");
+            setTool(ShapeType.rect);
           }}
         >
           rect
@@ -425,7 +409,7 @@ function Paint() {
       </div>
       <canvas
         className={`flex-shrink border ${
-          tool === "pen" ? "cursor-crosshair" : "cursor-move"
+          tool === ShapeType.path ? "cursor-crosshair" : "cursor-move"
         }`}
         ref={canvasRef}
         onMouseDown={handleMouseDown}
