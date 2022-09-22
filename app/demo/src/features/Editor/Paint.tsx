@@ -10,6 +10,7 @@ import { distanceToMultiLines, distanceToRect } from "./CanvasUtils";
 enum ShapeType {
   rect = "rect",
   path = "path",
+  circle = "circle",
 }
 
 type Shape =
@@ -25,6 +26,14 @@ type Shape =
   | {
       shape: ShapeType.path;
       points: [x: number, y: number][];
+    }
+  | {
+      shape: ShapeType.circle;
+      location: {
+        x: number;
+        y: number;
+      };
+      radius: number;
     };
 
 function Paint() {
@@ -150,6 +159,16 @@ function Paint() {
               shape.width,
               shape.height
             );
+          } else if (shape.shape === ShapeType.circle) {
+            paint?.beginPath();
+            paint?.arc(
+              shape.location.x,
+              shape.location.y,
+              shape.radius,
+              0,
+              Math.PI * 2
+            );
+            paint?.stroke();
           }
         });
       }
@@ -294,6 +313,71 @@ function Paint() {
         window.addEventListener("touchmove", renderRect);
         window.addEventListener("mouseup", removeListener);
         window.addEventListener("touchend", removeListener);
+      } else if (currentToolRef.current === ShapeType.circle) {
+        paint?.moveTo(inPaintX, inPaintY);
+
+        const startX = startPoint.x;
+        const startY = startPoint.y;
+
+        onNewPoint({ x: inPaintX, y: inPaintY });
+
+        let lastWidth = 0;
+        let lastHeight = 0;
+
+        function renderRect(event: MouseEvent | TouchEvent) {
+          const point = "touches" in event ? event.touches[0] : event;
+          requestAnimationFrame(() => {
+            rerenderObj();
+
+            const width = (point.clientX - startX) * scaleX;
+            const height = (point.clientY - startY) * scaleY;
+
+            lastWidth = width;
+            lastHeight = height;
+
+            paint?.beginPath();
+
+            paint?.arc(inPaintX, inPaintY, height, 0, 2 * Math.PI);
+
+            paint?.stroke();
+          });
+        }
+
+        function removeListener() {
+          if (lastWidth && lastHeight) {
+            console.log(
+              "add circle",
+              inPaintX,
+              inPaintY,
+              lastWidth,
+              lastHeight
+            );
+
+            renderingObj.current.objs.push({
+              shape: ShapeType.circle,
+              location: {
+                x: inPaintX,
+                y: inPaintY,
+              },
+              radius: lastHeight,
+            });
+
+            onNewPoint({
+              x: inPaintX + lastWidth,
+              y: inPaintY + lastHeight,
+            });
+          }
+
+          window.removeEventListener("mousemove", renderRect);
+          window.removeEventListener("touchmove", renderRect);
+          window.removeEventListener("mouseup", removeListener);
+          window.removeEventListener("touchend", removeListener);
+        }
+
+        window.addEventListener("mousemove", renderRect);
+        window.addEventListener("touchmove", renderRect);
+        window.addEventListener("mouseup", removeListener);
+        window.addEventListener("touchend", removeListener);
       } else if (currentToolRef.current === "select") {
         /**
          * 点击位置周围的矩形
@@ -342,6 +426,22 @@ function Paint() {
               );
 
               console.log("path[", index, "]", distance);
+
+              if (distance < offset) {
+                if (distance < closestDistance) {
+                  closestDistance = distance;
+                  closestShapeIndex = index;
+                }
+              }
+            } else if (shape.shape === ShapeType.circle) {
+              const { x, y } = shape.location;
+              const { radius } = shape;
+
+              const toCenter = Math.hypot(x - inPaintX, y - inPaintY);
+
+              const distance = Math.abs(toCenter - radius);
+
+              console.log("circle[", index, "]", distance);
 
               if (distance < offset) {
                 if (distance < closestDistance) {
@@ -407,6 +507,14 @@ function Paint() {
           }}
         >
           rect
+        </button>
+        <button
+          className={tool === ShapeType.circle ? "bg-blue-400 text-white" : ""}
+          onClick={() => {
+            setTool(ShapeType.circle);
+          }}
+        >
+          circle
         </button>
         <button
           className={tool === "select" ? "bg-blue-400 text-white" : ""}
