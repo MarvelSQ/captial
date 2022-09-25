@@ -321,8 +321,7 @@ function Paint() {
 
         onNewPoint({ x: inPaintX, y: inPaintY });
 
-        let lastWidth = 0;
-        let lastHeight = 0;
+        let lastRadius = 0;
 
         function renderRect(event: MouseEvent | TouchEvent) {
           const point = "touches" in event ? event.touches[0] : event;
@@ -332,39 +331,38 @@ function Paint() {
             const width = (point.clientX - startX) * scaleX;
             const height = (point.clientY - startY) * scaleY;
 
-            lastWidth = width;
-            lastHeight = height;
+            lastRadius = Math.min(width, height);
 
             paint?.beginPath();
 
-            paint?.arc(inPaintX, inPaintY, height, 0, 2 * Math.PI);
+            paint?.arc(
+              inPaintX + lastRadius / 2,
+              inPaintY + lastRadius / 2,
+              lastRadius / 2,
+              0,
+              2 * Math.PI
+            );
 
             paint?.stroke();
           });
         }
 
         function removeListener() {
-          if (lastWidth && lastHeight) {
-            console.log(
-              "add circle",
-              inPaintX,
-              inPaintY,
-              lastWidth,
-              lastHeight
-            );
+          if (lastRadius) {
+            console.log("add circle", inPaintX, inPaintY, lastRadius);
 
             renderingObj.current.objs.push({
               shape: ShapeType.circle,
               location: {
-                x: inPaintX,
-                y: inPaintY,
+                x: inPaintX + lastRadius / 2,
+                y: inPaintY + lastRadius / 2,
               },
-              radius: lastHeight,
+              radius: lastRadius / 2,
             });
 
             onNewPoint({
-              x: inPaintX + lastWidth,
-              y: inPaintY + lastHeight,
+              x: inPaintX + lastRadius,
+              y: inPaintY + lastRadius,
             });
           }
 
